@@ -1,0 +1,684 @@
+/* =========================================================
+   Painel do Dólar: versão "apresentação de produto".
+   Fundo quase preto, uma cena 3D com um letreiro de casa de câmbio
+   preso na parede, e números grandes na mesma letra do letreiro.
+   ========================================================= */
+
+:root {
+  --fundo: #0a0a0a;
+  --texto: #efebe3;        /* branco quebrado */
+  --texto-fraco: #8f8a80;
+  --ambar: #f5b700;        /* amarelo de letreiro */
+  --sobe: #34d17a;
+  --desce: #ff5a4e;
+  --papel: #ece6d8;
+  --tinta: #1d1b18;
+
+  /* Uma família só: Archivo. Condensada (75%) nos números, normal no texto. */
+  --fonte: "Archivo", system-ui, sans-serif;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  background: var(--fundo);
+  scrollbar-color: #3a3833 var(--fundo);
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  color: var(--texto);
+  background: var(--fundo);
+  font-family: var(--fonte);
+  font-weight: 450;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  color: var(--fundo);
+  background: var(--ambar);
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--ambar);
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+svg:focus-visible {
+  outline: 2px solid var(--texto);
+  outline-offset: 4px;
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Camadas fixas ---------- */
+
+/* A palavra gigante só aparece aqui quando não há 3D;
+   com 3D ela está pintada na parede da cena */
+.palavra-fundo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-weight: 800;
+  font-stretch: 75%;
+  font-size: 34vw;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: rgba(239, 235, 227, 0.055);
+  pointer-events: none;
+  user-select: none;
+}
+
+.com-3d .palavra-fundo {
+  display: none;
+}
+
+/* A cena 3D ocupa a tela toda, por trás do texto */
+.letreiro {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#cena {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Versão sem WebGL: um letreiro simples, parado no canto */
+.letreiro-reserva {
+  position: absolute;
+  top: 72px;
+  right: 24px;
+  display: grid;
+  gap: 4px;
+  padding: 14px 18px;
+  font: 800 28px/1.1 var(--fonte);
+  font-stretch: 75%;
+  letter-spacing: 0.12em;
+  white-space: pre;
+  background: #151515;
+  border-radius: 6px;
+}
+
+#reserva-linha1 {
+  color: var(--ambar);
+}
+
+/* ---------- Topo ---------- */
+.topo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px clamp(16px, 4vw, 48px);
+  font-size: 14px;
+  background: linear-gradient(var(--fundo) 30%, transparent);
+}
+
+.topo p {
+  margin: 0;
+}
+
+.marca {
+  font-weight: 700;
+  font-stretch: 75%;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+.status {
+  margin-left: auto !important;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.status.ao-vivo::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  vertical-align: 2px;
+  border-radius: 50%;
+  background: var(--sobe);
+}
+
+.botao-som {
+  min-height: 36px;
+  padding: 0 14px;
+  font: 500 14px var(--fonte);
+  color: var(--texto-fraco);
+  background: transparent;
+  border: 1px solid #2a2926;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.botao-som[aria-pressed="true"] {
+  color: var(--fundo);
+  background: var(--ambar);
+  border-color: var(--ambar);
+}
+
+/* ---------- Seções ---------- */
+main,
+.rodape {
+  position: relative;
+  z-index: 2;
+}
+
+/* A fita de papel entra de lado; isto evita a rolagem horizontal
+   (o overflow do body passa para a janela e não corta nada) */
+main {
+  overflow-x: clip;
+}
+
+.secao {
+  min-height: 100svh;
+  padding: 96px clamp(20px, 6vw, 96px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Abertura: o texto fica embaixo, o letreiro no meio */
+.secao-inicio {
+  justify-content: flex-end;
+  padding-bottom: 9svh;
+}
+
+.inicio-texto h1 {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 700;
+  font-stretch: 75%;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.inicio-texto p {
+  margin: 12px 0 0;
+  color: var(--texto-fraco);
+  font-size: 16px;
+}
+
+/* Seções com o texto de um lado e o letreiro do outro */
+.secao-lado .bloco {
+  max-width: 46vw;
+}
+
+.secao-direita {
+  align-items: flex-end;
+  text-align: right;
+}
+
+/* Números grandes na letra condensada, a mesma do letreiro */
+.numero-gigante,
+.numero-medio,
+.numero-variacao,
+.frase-titulo {
+  font-weight: 800;
+  font-stretch: 75%;
+  font-variant-numeric: tabular-nums;
+}
+
+.numero-gigante {
+  margin: 0;
+  font-size: clamp(110px, 19vw, 300px);
+  line-height: 0.82;
+  letter-spacing: -0.03em;
+}
+
+.frase {
+  margin: 22px 0 0;
+  max-width: 24ch;
+  font-size: clamp(22px, 2.4vw, 34px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+/* Variação: uma frase, com o número dentro dela */
+.frase-variacao {
+  margin: 0;
+  font-size: clamp(30px, 3.6vw, 52px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+.numero-variacao {
+  display: block;
+  margin-top: 6px;
+  font-size: clamp(84px, 13vw, 210px);
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.numero-variacao.sobe { color: var(--sobe); }
+.numero-variacao.desce { color: var(--desce); }
+
+.frase-titulo {
+  margin: 0;
+  font-size: clamp(48px, 7vw, 104px);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+
+.detalhe {
+  margin: 14px 0 0;
+  color: var(--texto-fraco);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rotulo {
+  display: block;
+  margin: 10px 0 0;
+  color: var(--texto-fraco);
+  font-size: 16px;
+}
+
+/* Máxima e mínima: dois números lado a lado, embaixo do letreiro */
+.secao-extremos {
+  justify-content: flex-end;
+  padding-bottom: 14svh;
+}
+
+.extremos {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  gap: clamp(32px, 8vw, 140px);
+}
+
+.numero-medio {
+  margin: 0;
+  font-size: clamp(84px, 13vw, 200px);
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+}
+
+/* ---------- Histórico: fita de papel ---------- */
+.secao-grafico {
+  justify-content: flex-end;
+}
+
+.fita {
+  margin-top: 40px;
+  /* a fita sai um pouco torta, como papel de verdade */
+  transform: rotate(-1deg);
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.55));
+}
+
+.fita-papel {
+  position: relative;
+  padding: 26px clamp(18px, 3vw, 34px) 26px;
+  color: var(--tinta);
+  background:
+    /* furinhos de tração em cima e embaixo, como formulário contínuo */
+    radial-gradient(circle, var(--fundo) 3.5px, transparent 4px) 0 7px / 22px 22px repeat-x,
+    radial-gradient(circle, var(--fundo) 3.5px, transparent 4px) 0 calc(100% - 7px) / 22px 22px repeat-x,
+    linear-gradient(175deg, #f2ecdf, var(--papel) 60%, #e2dbcb);
+  /* borda direita rasgada */
+  clip-path: polygon(
+    0 0, 100% 0, 99% 9%, 100% 18%, 98.8% 27%, 100% 36%, 99.2% 45%, 100% 54%,
+    98.9% 63%, 100% 72%, 99.1% 81%, 100% 90%, 99.3% 100%, 0 100%
+  );
+}
+
+.fita-cab {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-stretch: 75%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.grafico {
+  position: relative;
+  height: clamp(200px, 34svh, 360px);
+}
+
+#grafico-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+
+/* A "tinta" da linha: preta, um pouco borrada nas pontas */
+#linha {
+  fill: none;
+  stroke: var(--tinta);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 0;
+}
+
+#ponto-final {
+  fill: var(--tinta);
+}
+
+#ponto {
+  fill: var(--papel);
+  stroke: var(--tinta);
+  stroke-width: 2;
+  opacity: 0;
+}
+
+#grafico-svg:focus-visible {
+  outline-color: var(--tinta);
+}
+
+.dica {
+  position: absolute;
+  top: 0;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--papel);
+  background: var(--tinta);
+  border-radius: 3px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.eixo {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-stretch: 75%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ---------- Conversor ---------- */
+.secao-conversor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 40px clamp(32px, 6vw, 96px);
+  padding-top: 40svh;
+}
+
+.campo {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 8px;
+  border-bottom: 2px solid #34322e;
+}
+
+.campo:focus-within {
+  border-color: var(--texto);
+}
+
+.campo-moeda {
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 600;
+  color: var(--texto-fraco);
+}
+
+#quantia {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  font: 800 clamp(72px, 10vw, 140px)/1 var(--fonte);
+  font-stretch: 75%;
+  letter-spacing: -0.02em;
+  color: var(--texto);
+  caret-color: var(--ambar);
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+
+.aviso-quantia {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  color: var(--ambar);
+  font-size: 15px;
+}
+
+.botao-trocar {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 18px;
+  font: 600 15px var(--fonte);
+  color: var(--texto);
+  background: #1a1a19;
+  border: 1px solid #2f2e2a;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.botao-trocar:hover {
+  border-color: var(--texto-fraco);
+}
+
+/* Comprovante de casa de câmbio: papel térmico com a borda de baixo picotada */
+.comprovante {
+  width: min(340px, 100%);
+  padding: 22px 22px 34px;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(#f6f2e9, #ebe5d7);
+  transform: rotate(1.2deg);
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.5));
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 10px) no-repeat,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 16px 10px repeat-x;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 10px) no-repeat,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 16px 10px repeat-x;
+}
+
+.comp-cab {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  font-stretch: 75%;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.comp-data {
+  margin: 4px 0 16px;
+  font-size: 13px;
+  text-align: center;
+  color: #5c574e;
+}
+
+.comprovante dl {
+  margin: 0;
+  padding: 12px 0 0;
+  border-top: 1px dashed #8c867a;
+}
+
+.comprovante dl > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+/* Pontinhos entre o nome e o valor, como nos recibos */
+.comprovante dt {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.comprovante dt::after {
+  content: " ........................................................";
+  color: #8c867a;
+}
+
+.comprovante dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.comprovante .comp-total {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #8c867a;
+  font-size: 22px;
+  font-weight: 800;
+  font-stretch: 75%;
+}
+
+.comprovante .comp-total dd {
+  font-weight: 800;
+}
+
+.comp-nota {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #5c574e;
+}
+
+/* ---------- Rodapé ---------- */
+.rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 48px clamp(20px, 6vw, 96px) 40px;
+  color: var(--texto-fraco);
+  font-size: 15px;
+  background: var(--fundo);
+  border-top: 1px solid #1d1c1a;
+}
+
+.rodape p {
+  margin: 0;
+}
+
+/* ---------- Celular: o letreiro fica pequeno no alto
+   e o conteúdo de cada seção desce para a metade de baixo ---------- */
+@media (max-width: 760px) {
+  .topo {
+    padding-top: 14px;
+    font-size: 13px;
+  }
+
+  .marca {
+    display: none;
+  }
+
+  .status {
+    margin-left: 0 !important;
+  }
+
+  .botao-som {
+    margin-left: auto;
+  }
+
+  .secao {
+    justify-content: flex-end;
+    padding-top: 40svh;
+    padding-bottom: 10svh;
+  }
+
+  .secao-inicio {
+    padding-top: 0;
+  }
+
+  .secao-lado .bloco {
+    max-width: none;
+  }
+
+  .secao-direita {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .numero-gigante {
+    font-size: 34vw;
+  }
+
+  .numero-variacao {
+    font-size: 25vw;
+  }
+
+  .numero-medio {
+    font-size: 21vw;
+  }
+
+  .extremos {
+    gap: 28px;
+  }
+
+  /* minmax(0, ...) impede que a largura mínima do campo de texto estique a coluna */
+  .secao-conversor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comprovante {
+    justify-self: center;
+  }
+
+  .palavra-fundo {
+    align-items: start;
+    padding-top: 22svh;
+  }
+
+  .letreiro-reserva {
+    top: 64px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    font-size: 20px;
+  }
+}

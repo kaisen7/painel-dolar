@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Dólar</title>
+  <meta name="description" content="A cotação do dólar em tempo real, num letreiro de casa de câmbio em 3D.">
+  <meta name="theme-color" content="#0a0a0a">
+
+  <!-- Archivo: uma família só. A versão condensada é a letra do letreiro e dos números grandes;
+       a largura normal é o texto corrido. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Three.js vem como módulo; o "importmap" diz de onde baixar quando o script pedir "three" -->
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <script type="module" src="script.js"></script>
+</head>
+<body>
+  <!-- A cena 3D fica fixa atrás do conteúdo: uma parede, o letreiro e as luminárias dele -->
+  <div class="palavra-fundo" aria-hidden="true">DÓLAR</div>
+  <div class="letreiro" id="letreiro" role="img" aria-label="Letreiro de câmbio">
+    <canvas id="cena"></canvas>
+    <!-- Se o navegador não tiver WebGL, mostramos esta versão simples -->
+    <div class="letreiro-reserva" id="letreiro-reserva" hidden>
+      <span id="reserva-linha1">USD</span>
+      <span id="reserva-linha2">--</span>
+    </div>
+  </div>
+
+  <header class="topo">
+    <p class="marca">Painel do Dólar</p>
+    <p class="status" id="status">conectando…</p>
+    <button type="button" class="botao-som" id="som" aria-pressed="false">som: <span id="som-estado">desligado</span></button>
+  </header>
+
+  <main>
+    <!-- 1. Abertura -->
+    <section class="secao secao-inicio" data-secao="inicio" aria-labelledby="titulo-inicio">
+      <div class="inicio-texto">
+        <h1 id="titulo-inicio">A cotação do dólar, ao vivo.</h1>
+        <p>Atualiza sozinha a cada minuto. Role a página.</p>
+      </div>
+    </section>
+
+    <!-- 2. Cotação atual -->
+    <section class="secao secao-lado" data-secao="cotacao" aria-labelledby="titulo-cotacao">
+      <div class="bloco">
+        <h2 class="oculto" id="titulo-cotacao">Cotação atual</h2>
+        <p class="numero-gigante" id="numero-cotacao">--</p>
+        <p class="frase">Quanto custa um dólar agora.</p>
+        <p class="detalhe" id="compra-venda">&nbsp;</p>
+      </div>
+    </section>
+
+    <!-- 3. Variação do dia: o letreiro inclina como um ponteiro -->
+    <section class="secao secao-lado secao-direita" data-secao="variacao" aria-labelledby="titulo-variacao">
+      <div class="bloco">
+        <h2 class="oculto" id="titulo-variacao">Variação do dia</h2>
+        <p class="frase-variacao">
+          Hoje ele <span id="verbo-variacao">mudou</span>
+          <span class="numero-variacao" id="numero-variacao">--</span>
+        </p>
+        <p class="detalhe">Comparado com o fechamento de ontem.</p>
+      </div>
+    </section>
+
+    <!-- 4. Máxima e mínima -->
+    <section class="secao secao-extremos" data-secao="extremos" aria-labelledby="titulo-extremos">
+      <h2 class="oculto" id="titulo-extremos">Máxima e mínima do dia</h2>
+      <div class="extremos">
+        <div>
+          <p class="numero-medio" id="numero-maxima">--</p>
+          <p class="rotulo">máxima de hoje</p>
+        </div>
+        <div>
+          <p class="numero-medio" id="numero-minima">--</p>
+          <p class="rotulo">mínima de hoje</p>
+        </div>
+      </div>
+      <p class="frase" id="frase-extremos">&nbsp;</p>
+    </section>
+
+    <!-- 5. Histórico: uma fita de papel, como as antigas máquinas de cotação -->
+    <section class="secao secao-grafico" data-secao="grafico" aria-labelledby="titulo-grafico">
+      <h2 class="frase-titulo" id="titulo-grafico">As últimas 30 cotações.</h2>
+      <p class="frase" id="frase-grafico">&nbsp;</p>
+      <div class="fita" id="fita">
+        <div class="fita-papel">
+          <p class="fita-cab">USD/BRL · valor de compra · <span id="fita-total">30</span> cotações</p>
+          <div class="grafico" id="grafico">
+            <svg id="grafico-svg" role="img" aria-label="Gráfico de linha do dólar">
+              <path id="linha" pathLength="1000"></path>
+              <circle id="ponto-final" r="5"></circle>
+              <circle id="ponto" r="6"></circle>
+            </svg>
+            <div class="dica" id="dica" hidden></div>
+          </div>
+          <div class="eixo"><span id="data-inicio"></span><span id="data-fim"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Conversor: o resultado sai num comprovante -->
+    <section class="secao secao-conversor" data-secao="conversor" aria-labelledby="titulo-conversor">
+      <div class="bloco">
+        <h2 class="frase-titulo" id="titulo-conversor">Faça a conta.</h2>
+        <label class="rotulo" for="quantia" id="rotulo-quantia">quantia em dólares</label>
+        <div class="campo">
+          <span class="campo-moeda" id="moeda-entrada">US$</span>
+          <input id="quantia" type="text" inputmode="decimal" autocomplete="off" value="100" aria-describedby="aviso-quantia">
+        </div>
+        <p class="aviso-quantia" id="aviso-quantia" role="status"></p>
+        <button type="button" class="botao-trocar" id="inverter">trocar para reais</button>
+      </div>
+
+      <div class="comprovante" id="comprovante" aria-live="polite">
+        <p class="comp-cab">Câmbio · taxas do dia</p>
+        <p class="comp-data" id="comp-data">&nbsp;</p>
+        <dl>
+          <div><dt>operação</dt><dd id="comp-operacao">dólar → real</dd></div>
+          <div><dt>valor</dt><dd id="comp-valor">--</dd></div>
+          <div><dt>cotação</dt><dd id="comp-cotacao">--</dd></div>
+          <div class="comp-total"><dt>total</dt><dd id="comp-total">--</dd></div>
+        </dl>
+        <p class="comp-nota">Sem IOF e sem a taxa da casa. No balcão, o total sai maior.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- 7. Rodapé -->
+  <footer class="rodape" data-secao="rodape">
+    <!-- Se quiser, coloque aqui uma frase sua em primeira pessoa -->
+    <p>Feito por <a href="https://github.com/kaisen7" target="_blank" rel="noopener">Kauã de Oliveira Santos</a></p>
+    <p>Dados da <a href="https://docs.awesomeapi.com.br/" target="_blank" rel="noopener">AwesomeAPI</a>, cotação do dólar comercial.</p>
+  </footer>
+</body>
+</html>
